@@ -1,0 +1,150 @@
+{
+  "users": [
+    {
+      "id": "u1",
+      "username": "Profesor",
+      "email": "profesor@centro.com",
+      "password": "prof1234"
+    },
+    {
+      "id": "u2",
+      "username": "Ana",
+      "email": "ana@centro.com",
+      "password": "ana1234"
+    },
+    {
+      "id": "u3",
+      "username": "Luis",
+      "email": "luis@centro.com",
+      "password": "luis1234"
+    },
+    {
+      "id": "u4",
+      "username": "Marta",
+      "email": "marta@centro.com",
+      "password": "marta1234"
+    },
+    {
+      "username": "xavi",
+      "password": "xavi"
+    },
+    {
+      "username": "Xavier",
+      "password": "x"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m1",
+      "room": "s1",
+      "username": "Profesor",
+      "message": "Hola, esta es la sala del profesor.",
+      "timestamp": "2025-04-20T10:00:00"
+    },
+    {
+      "id": "m2",
+      "room": "s2",
+      "username": "Ana",
+      "message": "Hola compañeros.",
+      "timestamp": "2025-04-20T10:05:00"
+    },
+    {
+      "id": "m3",
+      "room": "s3",
+      "username": "Ana",
+      "message": "Hola Luis, ¿hacemos el ejercicio juntos?",
+      "timestamp": "2025-04-20T10:10:00"
+    },
+    {
+      "id": "m4",
+      "room": "s3",
+      "username": "Luis",
+      "message": "Sí, perfecto. Empiezo con el login.",
+      "timestamp": "2025-04-20T10:12:00"
+    },
+    {
+      "id": "m5",
+      "room": "s3",
+      "username": "Sistema",
+      "message": "Se ha creado un documento colaborativo para esta sala.",
+      "timestamp": "2025-04-20T10:15:00"
+    },
+    {
+      "username": "Profesor",
+      "message": "hola",
+      "room": "prueba",
+      "timestamp": "2025-05-05T16:46:54.836Z"
+    },
+    {
+      "username": "Profesor",
+      "message": "hola",
+      "room": "juan",
+      "timestamp": "2025-05-05T16:47:01.987Z"
+    },
+    {
+      "username": "Profesor",
+      "message": "feo",
+      "room": "juan",
+      "timestamp": "2025-05-05T16:47:10.932Z"
+    },
+    {
+      "username": "Ana",
+      "message": "guapo",
+      "room": "juan",
+      "timestamp": "2025-05-05T16:52:00.634Z"
+    },
+    {
+      "username": "Profesor",
+      "message": "hola",
+      "room": "juan",
+      "timestamp": "2025-05-05T16:52:14.385Z"
+    },
+    {
+      "username": "Ana",
+      "message": "aaa",
+      "room": "juan",
+      "timestamp": "2025-05-05T16:53:07.829Z"
+    },
+    {
+      "username": "Ana",
+      "message": "dsas",
+      "room": "juan",
+      "timestamp": "2025-05-05T16:53:23.067Z"
+    },
+    {
+      "username": "Ana",
+      "message": "calla pol",
+      "room": "sala1",
+      "timestamp": "2025-05-05T17:11:06.404Z"
+    },
+    {
+      "username": "Xavier",
+      "message": "hola arnau",
+      "room": "sala1",
+      "timestamp": "2025-05-06T16:59:35.953Z"
+    }
+  ],
+  "documents": [
+    {
+      "id": "d1",
+      "room": "s3",
+      "title": "Ejercicio Ana-Luis",
+      "content": "Hola Luis, esta es la primera línea del documento.",
+      "lastModified": "2025-04-20T10:20:00"
+    },
+    {
+      "id": "d2",
+      "room": "sala1",
+      "title": "gold-ingots.png",
+      "path": "uploads\\6803aae27d263d2c5aa6517386bb5473",
+      "lastModified": "2025-05-06T16:58:15.371Z"
+    },
+    {
+      "id": "d3",
+      "room": "sala1",
+      "title": "maderas.png",
+      "path": "uploads\\de19035dad5c0de9ec019501e06a2d88",
+      "lastModified": "2025-05-06T16:59:54.094Z"
+    }
+  ]
+}
