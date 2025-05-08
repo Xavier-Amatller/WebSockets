@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 
 // Definir tipos para los mensajes y documentos
@@ -12,90 +12,95 @@ interface Document {
   id: string;
   room: string;
   title: string;
-  path: string;
+  path?: string;
+  content?: string;
   lastModified: string;
 }
 
 const App: React.FC = () => {
   const [socket, setSocket] = useState<WebSocket | null>(null);
+  const socketRef = useRef<WebSocket | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [docContent, setDocContent] = useState('');
   const [input, setInput] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [room, setRoom] = useState('sala1'); // Sala por defecto
+  const [room, setRoom] = useState('General');
+  const [tempRoom, setTempRoom] = useState('General');
   const [error, setError] = useState<string | null>(null);
   const [showRegister, setShowRegister] = useState(false);
 
-  // Conectar al WebSocket y cargar historial y documentos al iniciar sesión
   useEffect(() => {
-    if (isLoggedIn) {
+    if (isLoggedIn && !socketRef.current) {
       const ws = new WebSocket('ws://localhost:4000');
+      socketRef.current = ws;
+      setSocket(ws);
 
       ws.onopen = () => {
-        console.log('Conectado al WebSocket');
         ws.send(JSON.stringify({ type: 'join', room, username }));
       };
 
       ws.onmessage = (event) => {
+
         try {
-          const data: Message = JSON.parse(event.data);
-          setMessages((prev) => [...prev, data]);
+          const data = JSON.parse(event.data);
+          if (data.type === 'doc_update') {
+            setDocContent(data.content || '');
+          } else {
+            setMessages((prev) => [...prev, data]);
+          }
         } catch (err) {
-          console.error('Error al parsear mensaje WebSocket:', err);
         }
       };
 
       ws.onerror = (err) => {
-        console.error('Error en WebSocket:', err);
         setError('No se pudo conectar al servidor');
       };
 
       ws.onclose = () => {
-        console.log('Desconectado del WebSocket');
+        socketRef.current = null;
+        setSocket(null);
       };
+    }
 
-      setSocket(ws);
+  }, [isLoggedIn, room, username]);
 
-      // Cargar historial de mensajes
+  useEffect(() => {
+    if (isLoggedIn) {
       axios
         .get(`http://localhost:4000/api/history/${room}`)
         .then((response) => {
           setMessages(response.data);
         })
         .catch((error) => {
-          console.error('Error al cargar historial:', error);
           setError('Error al cargar el historial');
         });
 
-      // Cargar documentos
       axios
         .get(`http://localhost:4000/api/documents/${room}`)
         .then((response) => {
           setDocuments(response.data);
+          const doc = response.data.find((d: Document) => d.content);
+          setDocContent(doc?.content || '');
         })
         .catch((error) => {
-          console.error('Error al cargar documentos:', error);
           setError('Error al cargar documentos');
         });
-
-      return () => ws.close();
     }
-  }, [isLoggedIn, room, username]);
+  }, [isLoggedIn, room]);
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     try {
-      const response = await axios.post('http://localhost:4000/auth/login', {
+      await axios.post('http://localhost:4000/auth/login', {
         username,
         password,
       });
-      console.log('Login exitoso:', response.data);
       setIsLoggedIn(true);
     } catch (error: any) {
-      console.error('Error en login:', error);
       setError(error.response?.data?.error || 'Credenciales inválidas');
     }
   };
@@ -104,15 +109,13 @@ const App: React.FC = () => {
     e.preventDefault();
     setError(null);
     try {
-      const response = await axios.post('http://localhost:4000/auth/register', {
+      await axios.post('http://localhost:4000/auth/register', {
         username,
         password,
       });
-      console.log('Registro exitoso:', response.data);
       alert('Usuario registrado. Por favor, inicia sesión.');
       setShowRegister(false);
     } catch (error: any) {
-      console.error('Error en registro:', error);
       setError(error.response?.data?.error || 'Error al registrar');
     }
   };
@@ -126,7 +129,6 @@ const App: React.FC = () => {
       socket.send(JSON.stringify({ type: 'message', room, username, message: input }));
       setInput('');
     } catch (err) {
-      console.error('Error al enviar mensaje:', err);
       setError('Error al enviar el mensaje');
     }
   };
@@ -142,12 +144,43 @@ const App: React.FC = () => {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       alert('Archivo subido');
-      // Recargar lista de documentos
       const response = await axios.get(`http://localhost:4000/api/documents/${room}`);
       setDocuments(response.data);
     } catch (error: any) {
-      console.error('Error al subir archivo:', error);
       setError(error.response?.data?.error || 'Error al subir archivo');
+    }
+  };
+
+  const updateDoc = (content: string) => {
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+      setError('No se puede actualizar el documento: conexión no establecida');
+      return;
+    }
+    try {
+      socket.send(JSON.stringify({ type: 'doc_update', room, content }));
+      setDocContent(content);
+    } catch (err) {
+      setError('Error al actualizar el documento');
+    }
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setUsername('');
+    setPassword('');
+    setMessages([]);
+    setDocuments([]);
+    setDocContent('');
+    setRoom('sala1');
+    setTempRoom('sala1');
+    if (socketRef.current) {
+      socketRef.current.close();
+    }
+  };
+
+  const handleChangeRoom = () => {
+    if (tempRoom && tempRoom !== room) {
+      setRoom(tempRoom);
     }
   };
 
@@ -217,15 +250,24 @@ const App: React.FC = () => {
 
   return (
     <div style={{ padding: '20px' }}>
-      <h1>Chat en sala: {room}</h1>
+      <h1>Sala: {room}</h1>
       {error && <p style={{ color: 'red' }}>{error}</p>}
-      <input
-        type="text"
-        value={room}
-        onChange={(e) => setRoom(e.target.value)}
-        placeholder="Nombre de la sala"
-        style={{ margin: '10px', padding: '5px' }}
-      />
+      {/* <div style={{ margin: '10px' }}>
+        <input
+          type="text"
+          value={tempRoom}
+          onChange={(e) => setTempRoom(e.target.value)}
+          placeholder="Nombre de la sala"
+          style={{ margin: '10px', padding: '5px' }}
+        />
+        <button
+          onClick={handleChangeRoom}
+          style={{ margin: '10px', padding: '5px 10px' }}
+        >
+          Cambiar sala
+        </button>
+      </div> */}
+      <h2>Chat</h2>
       <div style={{ margin: '20px 0' }}>
         {messages.map((msg, i) => (
           <p key={i}>
@@ -248,6 +290,12 @@ const App: React.FC = () => {
       >
         Descargar historial (TXT)
       </button>
+      <button
+        onClick={handleLogout}
+        style={{ margin: '10px', padding: '5px 10px', background: 'red', color: 'white' }}
+      >
+        Cerrar sesión
+      </button>
       <div>
         <h2>Archivos</h2>
         <input
@@ -265,6 +313,15 @@ const App: React.FC = () => {
             </li>
           ))}
         </ul>
+      </div>
+      <div>
+        <h2>Documento colaborativo</h2>
+        <textarea
+          value={docContent}
+          onChange={(e) => updateDoc(e.target.value)}
+          placeholder="Escribe aquí el contenido del documento..."
+          style={{ width: '100%', height: '200px', margin: '10px', padding: '5px' }}
+        />
       </div>
     </div>
   );

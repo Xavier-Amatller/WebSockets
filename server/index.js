@@ -2,7 +2,9 @@ const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
 const cors = require('cors');
-const { readDB, writeDB } = require('./utils/db'); // Importa las funciones de persistencia
+const { readDB, writeDB } = require('./utils/db');
+const multer = require('multer');
+const path = require('path');
 
 const app = express();
 const port = 4000;
@@ -13,44 +15,83 @@ app.use(express.json());
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
-// Mapa para asociar clientes a salas
 const clientsByRoom = new Map();
 
-// WebSocket para manejar mensajes y salas
+const upload = multer({
+  dest: 'uploads/',
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Tipo de archivo no permitido'));
+    }
+  },
+});
+
 wss.on('connection', (ws) => {
-  console.log('Cliente conectado');
 
-  // Manejar mensajes enviados por el cliente
   ws.on('message', async (data) => {
-    const { type, room, username, message } = JSON.parse(data);
+    try {
+      const { type, room, username, message, content } = JSON.parse(data);
 
-    if (type === 'join') {
-      // Unir al cliente a una sala
-      ws.room = room;
-      if (!clientsByRoom.has(room)) {
-        clientsByRoom.set(room, new Set());
-      }
-      clientsByRoom.get(room).add(ws);
-      console.log(`${username} se unió a la sala ${room}`);
-    } else if (type === 'message') {
-      // Guardar el mensaje en db.json
-      const db = await readDB();
-      db.messages.push({ username, message, room, timestamp: new Date() });
-      await writeDB(db);
-
-      // Enviar el mensaje a todos los clientes en la misma sala
-      const clients = clientsByRoom.get(room) || [];
-      clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify({ username, message, timestamp: new Date() }));
+      if (type === 'join') {
+        ws.room = room;
+        if (!clientsByRoom.has(room)) {
+          clientsByRoom.set(room, new Set());
         }
-      });
+        clientsByRoom.get(room).add(ws);
+      } else if (type === 'message') {
+        const db = await readDB();
+        const newMessage = {
+          username,
+          message,
+          room,
+          timestamp: new Date().toISOString(),
+        };
+        db.messages.push(newMessage);
+        await writeDB(db);
+
+        const clients = clientsByRoom.get(room) || [];
+        
+        clients.forEach((client) => {
+         
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify(newMessage));
+          }
+        });
+      } else if (type === 'doc_update') {
+        const db = await readDB();
+        let doc = db.documents.find((d) => d.room === room && d.content);
+        if (doc) {
+          doc.content = content;
+          doc.lastModified = new Date().toISOString();
+        } else {
+          doc = {
+            id: `d${db.documents.length + 1}`,
+            room,
+            title: `Documento ${room}`,
+            content,
+            lastModified: new Date().toISOString(),
+          };
+          db.documents.push(doc);
+        }
+        await writeDB(db);
+
+        const clients = clientsByRoom.get(room) || [];
+        clients.forEach((client) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({ type: 'doc_update', content }));
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Error al procesar mensaje WebSocket:', err);
     }
   });
 
   ws.on('close', () => {
-    console.log('Cliente desconectado');
-    // Eliminar al cliente de su sala
     if (ws.room && clientsByRoom.has(ws.room)) {
       clientsByRoom.get(ws.room).delete(ws);
       if (clientsByRoom.get(ws.room).size === 0) {
@@ -58,9 +99,12 @@ wss.on('connection', (ws) => {
       }
     }
   });
+
+  ws.on('error', (err) => {
+    console.error('Error en WebSocket:', err);
+  });
 });
 
-// Middleware para verificar usuario autenticado
 const verifyUser = async (req, res, next) => {
   const { username, password } = req.body;
   const db = await readDB();
@@ -72,7 +116,6 @@ const verifyUser = async (req, res, next) => {
   next();
 };
 
-// Endpoint para registrar usuarios
 app.post('/auth/register', async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
@@ -84,12 +127,11 @@ app.post('/auth/register', async (req, res) => {
     return res.status(400).json({ error: 'Usuario ya existe' });
   }
 
-  db.users.push({ username, password }); // En producción, usa bcrypt
+  db.users.push({ username, password });
   await writeDB(db);
   res.status(201).json({ message: 'Usuario registrado' });
 });
 
-// Endpoint para login
 app.post('/auth/login', async (req, res) => {
   const { username, password } = req.body;
   const db = await readDB();
@@ -100,7 +142,6 @@ app.post('/auth/login', async (req, res) => {
   res.json({ message: 'Login exitoso', user });
 });
 
-// Endpoint para enviar mensajes (modificado para usar WebSocket)
 app.post('/api/message', verifyUser, async (req, res) => {
   const { message, room } = req.body;
   const username = req.user.username;
@@ -109,23 +150,26 @@ app.post('/api/message', verifyUser, async (req, res) => {
     return res.status(400).json({ error: 'Mensaje o sala vacíos' });
   }
 
-  // Guardar el mensaje en db.json
   const db = await readDB();
-  db.messages.push({ username, message, room, timestamp: new Date() });
+  const newMessage = {
+    username,
+    message,
+    room,
+    timestamp: new Date().toISOString(),
+  };
+  db.messages.push(newMessage);
   await writeDB(db);
 
-  // Enviar el mensaje a los clientes en la sala
   const clients = clientsByRoom.get(room) || [];
   clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify({ username, message, timestamp: new Date() }));
+      client.send(JSON.stringify(newMessage));
     }
   });
 
   res.json({ sent: true });
 });
 
-// Endpoint para recuperar el historial de mensajes
 app.get('/api/history/:room', async (req, res) => {
   const { room } = req.params;
   const db = await readDB();
@@ -133,12 +177,11 @@ app.get('/api/history/:room', async (req, res) => {
   res.json(messages);
 });
 
-// Endpoint para exportar el historial de mensajes
 app.get('/api/export/:room', async (req, res) => {
   const { room } = req.params;
   const db = await readDB();
   const messages = db.messages.filter((msg) => msg.room === room);
-  const format = req.query.format || 'txt'; // ?format=txt o ?format=json
+  const format = req.query.format || 'txt';
   if (format === 'json') {
     res.set('Content-Type', 'application/json');
     res.set('Content-Disposition', `attachment; filename=${room}_history.json`);
@@ -151,37 +194,28 @@ app.get('/api/export/:room', async (req, res) => {
   }
 });
 
-const multer = require('multer');
-const path = require('path');
-const upload = multer({
-  dest: 'uploads/',
-  limits: { fileSize: 5 * 1024 * 1024 }, // Límite de 5MB
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Tipo de archivo no permitido'));
-    }
-  },
-});
-
-// Endpoint para subir archivos
 app.post('/api/upload', upload.single('file'), async (req, res) => {
-  const { room } = req.body;
-  const db = await readDB();
-  db.documents.push({
-    id: `d${db.documents.length + 1}`,
-    room,
-    title: req.file.originalname,
-    path: req.file.path,
-    lastModified: new Date().toISOString(),
-  });
-  await writeDB(db);
-  res.json({ message: 'Archivo subido' });
+  try {
+    const { room } = req.body;
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se proporcionó un archivo' });
+    }
+    const db = await readDB();
+    db.documents.push({
+      id: `d${db.documents.length + 1}`,
+      room,
+      title: req.file.originalname,
+      path: req.file.path,
+      lastModified: new Date().toISOString(),
+    });
+    await writeDB(db);
+    res.json({ message: 'Archivo subido' });
+  } catch (error) {
+    console.error('Error al subir archivo:', error);
+    res.status(400).json({ error: error.message || 'Error al subir archivo' });
+  }
 });
 
-// Endpoint para listar documentos de una sala
 app.get('/api/documents/:room', async (req, res) => {
   const { room } = req.params;
   const db = await readDB();
@@ -189,7 +223,6 @@ app.get('/api/documents/:room', async (req, res) => {
   res.json(documents);
 });
 
-// Endpoint para descargar un documento
 app.get('/api/download/:id', async (req, res) => {
   const { id } = req.params;
   const db = await readDB();
@@ -203,4 +236,3 @@ app.get('/api/download/:id', async (req, res) => {
 server.listen(port, () => {
   console.log(`Servidor escuchando en http://localhost:${port}`);
 });
-
