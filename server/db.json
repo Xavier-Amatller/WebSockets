@@ -43,6 +43,10 @@
     {
       "username": "Holaaaaaa",
       "password": "123456"
+    },
+    {
+      "username": "kaka12345",
+      "password": "12345"
     }
   ],
   "messages": [
@@ -186,8 +190,9 @@
       "id": "d3",
       "room": "General",
       "title": "Documento General",
-      "content": "h",
-      "lastModified": "2025-05-08T20:12:51.442Z"
+      "content": "hasas",
+      "lastModified": "2025-05-12T16:50:48.520Z"
     }
-  ]
+  ],
+  "documentVersions": []
 }
