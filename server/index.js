@@ -42,43 +42,54 @@ wss.on('connection', (ws) => {
           clientsByRoom.set(room, new Set());
         }
         clientsByRoom.get(room).add(ws);
-      }  else if (type === 'doc_update') {
-    const db = await readDB();
-    let doc = db.documents.find((d) => d.room === room && d.content !== undefined);
-    const now = new Date().toISOString();
+      } else if (type === 'message') {
+        const db = await readDB();
+        const newMessage = {
+          username,
+          message,
+          room,
+          timestamp: new Date().toISOString(),
+        };
+        db.messages.push(newMessage);
+        await writeDB(db);
 
-    if (doc) {
+        const clients = clientsByRoom.get(room) || [];
+        
+        clients.forEach((client) => {
+         
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify(newMessage));
+          }
+        });
+      } else if (type === 'doc_update') {
+        const db = await readDB();
+        let doc = db.documents.find((d) => d.room === room && d.content);
+        if (doc) {
+          doc.content = content;
+          doc.lastModified = new Date().toISOString();
+        } else {
+          doc = {
+            id: `d${db.documents.length + 1}`,
+            room,
+            title: `Documento ${room}`,
+            content,
+            lastModified: new Date().toISOString(),
+          };
+          db.documents.push(doc);
+        }
+        await writeDB(db);
 
-    if (!doc.versions) doc.versions = [];
-    doc.versions.push({
-      content: doc.content,
-      timestamp: doc.lastModified
-    });
-
-    doc.content = content;
-    doc.lastModified = now;
-    } else {
-    doc = {
-      id: `d${db.documents.length + 1}`,
-      room,
-      title: `Documento ${room}`,
-      content,
-      lastModified: now,
-      versions: []
-    };
-    db.documents.push(doc);
-  }
-
-  await writeDB(db);
-
-  const clients = clientsByRoom.get(room) || [];
-  clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify({ type: 'doc_update', content }));
+        const clients = clientsByRoom.get(room) || [];
+        clients.forEach((client) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({ type: 'doc_update', content }));
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Error al procesar mensaje WebSocket:', err);
     }
   });
-}
-
 
   ws.on('close', () => {
     if (ws.room && clientsByRoom.has(ws.room)) {
@@ -220,24 +231,6 @@ app.get('/api/download/:id', async (req, res) => {
     return res.status(404).json({ error: 'Documento no encontrado' });
   }
   res.download(document.path, document.title);
-});
-
-app.get('/api/doc-versions/:id', async (req, res) => {
-  const { id } = req.params;
-  const db = await readDB();
-  const doc = db.documents.find((d) => d.id === id);
-
-  if (!doc) {
-    return res.status(404).json({ error: 'Documento no encontrado' });
-  }
-
-  res.json({
-    current: {
-      content: doc.content,
-      lastModified: doc.lastModified
-    },
-    versions: doc.versions || []
-  });
 });
 
 
