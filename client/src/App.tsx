@@ -56,6 +56,7 @@ const ChatAppComponent: React.FC = () => {
   const [isVersionRestoring, setIsVersionRestoring] = useState(false)
   const [lastSavedContent, setLastSavedContent] = useState("")
   const [saveTimeout, setSaveTimeout] = useState<number | null>(null)
+  const [editingUser, setEditingUser] = useState<string | null>(null);
 
   useEffect(() => {
     if (isLoggedIn && !socketRef.current) {
@@ -69,15 +70,18 @@ const ChatAppComponent: React.FC = () => {
 
       ws.onmessage = (event) => {
         try {
-          const data = JSON.parse(event.data)
-          if (data.type === "doc_update") {
-            setDocContent(data.content || "")
-          } else {
-            setMessages((prev) => [...prev, data])
-          }
-        } catch (err) {
-          // Silent error
-        }
+const data = JSON.parse(event.data);
+    if (data.type === 'doc_update') {
+      setDocContent(data.content || '');
+      setEditingUser(data.editedBy || null);
+    } else if (data.type === 'doc_typing') {
+      setEditingUser(data.username || null);
+    } else {
+      setMessages((prev) => [...prev, data]);
+    }
+  } catch (err) {
+    // Silent error
+  }
       }
 
       ws.onerror = () => {
@@ -1144,30 +1148,32 @@ const loadDocumentVersions = async (documentId: string) => {
                     </button>
                   </div>
                   <div className="p-6">
-                    <div className="mb-4 flex items-center justify-between">
-                      <div className="flex items-center">
-                        <div className="h-8 w-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 mr-2">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-900">Documento de la sala: {room}</h4>
-                          <p className="text-xs text-gray-500">Edición en tiempo real</p>
-                        </div>
-                      </div>
-                      <div>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          <span className="h-2 w-2 mr-1 bg-green-500 rounded-full"></span>
-                          Colaborativo
-                        </span>
-                      </div>
-                    </div>
+              <div className="mb-4 flex items-center justify-between">
+  <div className="flex items-center">
+    <div className="h-8 w-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 mr-2">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-4 w-4"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+      >
+        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+      </svg>
+    </div>
+    <div>
+      <h4 className="text-sm font-medium text-gray-900">Documento de la sala: {room}</h4>
+      <p className="text-xs text-gray-500">
+        {editingUser ? `Editando: ${editingUser}` : 'Edición en tiempo real'}
+      </p>
+    </div>
+  </div>
+  <div>
+    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+      <span className="h-2 w-2 mr-1 bg-green-500 rounded-full"></span>
+      Colaborativo
+    </span>
+  </div>
+</div>
                     <div className="border border-gray-300 rounded-lg overflow-hidden">
                       <div className="bg-gray-50 px-4 py-2 border-b border-gray-300 flex items-center space-x-2">
                         <button
@@ -1223,12 +1229,23 @@ const loadDocumentVersions = async (documentId: string) => {
                           </svg>
                         </button>
                       </div>
-                      <textarea
-                        value={docContent}
-                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDocContent(e.target.value)}
-                        placeholder="Escribe aquí el contenido del documento colaborativo..."
-                        className="w-full min-h-[300px] px-4 py-3 border-0 focus:outline-none focus:ring-0 resize-none"
-                      />
+<textarea
+  value={docContent}
+  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setDocContent(e.target.value);
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(
+        JSON.stringify({
+          type: 'doc_typing',
+          room,
+          username,
+        }),
+      );
+    }
+  }}
+  placeholder="Escribe aquí el contenido del documento colaborativo..."
+  className="w-full min-h-[300px] px-4 py-3 border-0 focus:outline-none focus:ring-0 resize-none"
+/>
                     </div>
                   </div>
                 </div>

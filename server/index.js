@@ -32,102 +32,108 @@ const upload = multer({
 });
 
 wss.on('connection', (ws) => {
-  ws.on('message', async (data) => {
-    try {
-      const parsedData = JSON.parse(data);
-      const { type, room, username, message, content, saveVersion } = parsedData;
+ ws.on('message', async (data) => {
+  try {
+    const parsedData = JSON.parse(data);
+    const { type, room, username, message, content, saveVersion } = parsedData;
 
-      if (type === 'join') {
-        ws.room = room;
-        if (!clientsByRoom.has(room)) {
-          clientsByRoom.set(room, new Set());
-        }
-        clientsByRoom.get(room).add(ws);
-      } else if (type === 'message') {
-        const db = await readDB();
-        const newMessage = {
-          username,
-          message,
-          room,
-          timestamp: new Date().toISOString(),
-        };
-        db.messages.push(newMessage);
-        await writeDB(db);
-
-        const clients = clientsByRoom.get(room) || [];
-        
-        clients.forEach((client) => {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify(newMessage));
-          }
-        });
-      } else if (type === 'doc_update') {
-        const db = await readDB();
-        
-        // Inicializar documentVersions si no existe
-        if (!db.documentVersions) {
-          db.documentVersions = [];
-        }
-        
-        let doc = db.documents.find((d) => d.room === room && d.content !== undefined);
-        
-        if (doc) {
-          // Guardar versión anterior si el contenido ha cambiado y se solicita guardar versión
-          if (saveVersion && doc.content !== content) {
-            db.documentVersions.push({
-              id: uuidv4(),
-              documentId: doc.id,
-              content: doc.content, // Guardar contenido anterior
-              createdBy: username || 'Usuario desconocido',
-              createdAt: new Date().toISOString(),
-              versionNumber: getNextVersionNumber(db.documentVersions, doc.id)
-            });
-          }
-          
-          // Actualizar el documento
-          doc.content = content;
-          doc.lastModified = new Date().toISOString();
-        } else {
-          // Crear nuevo documento
-          doc = {
-            id: uuidv4(),
-            room,
-            title: `Documento ${room}`,
-            content,
-            lastModified: new Date().toISOString(),
-          };
-          db.documents.push(doc);
-          
-          // Crear primera versión
-          if (saveVersion) {
-            db.documentVersions.push({
-              id: uuidv4(),
-              documentId: doc.id,
-              content,
-              createdBy: username || 'Usuario desconocido',
-              createdAt: new Date().toISOString(),
-              versionNumber: 1
-            });
-          }
-        }
-        
-        await writeDB(db);
-        
-        const clients = clientsByRoom.get(room) || [];
-        clients.forEach((client) => {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({ 
-              type: 'doc_update', 
-              content,
-              documentId: doc.id
-            }));
-          }
-        });
+    if (type === 'join') {
+      ws.room = room;
+      if (!clientsByRoom.has(room)) {
+        clientsByRoom.set(room, new Set());
       }
-    } catch (err) {
-      console.error('Error al procesar mensaje WebSocket:', err);
+      clientsByRoom.get(room).add(ws);
+    } else if (type === 'message') {
+      const db = await readDB();
+      const newMessage = {
+        username,
+        message,
+        room,
+        timestamp: new Date().toISOString(),
+      };
+      db.messages.push(newMessage);
+      await writeDB(db);
+
+      const clients = clientsByRoom.get(room) || [];
+      
+      clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify(newMessage));
+        }
+      });
+    } else if (type === 'doc_update') {
+      const db = await readDB();
+      
+      if (!db.documentVersions) {
+        db.documentVersions = [];
+      }
+      
+      let doc = db.documents.find((d) => d.room === room && d.content !== undefined);
+      
+      if (doc) {
+        if (saveVersion && doc.content !== content) {
+          db.documentVersions.push({
+            id: uuidv4(),
+            documentId: doc.id,
+            content: doc.content,
+            createdBy: username || 'Usuario desconocido',
+            createdAt: new Date().toISOString(),
+            versionNumber: getNextVersionNumber(db.documentVersions, doc.id)
+          });
+        }
+        
+        doc.content = content;
+        doc.lastModified = new Date().toISOString();
+      } else {
+        doc = {
+          id: uuidv4(),
+          room,
+          title: `Documento ${room}`,
+          content,
+          lastModified: new Date().toISOString(),
+        };
+        db.documents.push(doc);
+        
+        if (saveVersion) {
+          db.documentVersions.push({
+            id: uuidv4(),
+            documentId: doc.id,
+            content,
+            createdBy: username || 'Usuario desconocido',
+            createdAt: new Date().toISOString(),
+            versionNumber: 1
+          });
+        }
+      }
+      
+      await writeDB(db);
+      
+      const clients = clientsByRoom.get(room) || [];
+      clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({ 
+            type: 'doc_update', 
+            content,
+            documentId: doc.id,
+            editedBy: username || 'Usuario desconocido'
+          }));
+        }
+      });
+    } else if (type === 'doc_typing') {
+      const clients = clientsByRoom.get(room) || [];
+      clients.forEach((client) => {
+        if (client !== ws && client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({ 
+            type: 'doc_typing', 
+            username: username || 'Usuario desconocido'
+          }));
+        }
+      });
     }
-  });
+  } catch (err) {
+    console.error('Error al procesar mensaje WebSocket:', err);
+  }
+});
 
   ws.on('close', () => {
     if (ws.room && clientsByRoom.has(ws.room)) {
