@@ -113,10 +113,3 @@ npm run dev
 - Visualización de archivos compartidos
 - Descarga de archivos
 
-## Licencia
-
-Este proyecto está licenciado bajo la Licencia MIT - ver el archivo LICENSE para más detalles.
-
-## Contacto
-
-Para preguntas o sugerencias, por favor contacta a [tu-email@ejemplo.com](mailto:tu-email@ejemplo.com)
