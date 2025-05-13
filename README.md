@@ -26,22 +26,6 @@ Una aplicación web de chat colaborativo que permite a los usuarios comunicarse,
 - Tailwind CSS
 - Axios (para peticiones HTTP)
 
-## Estructura del proyecto
-
-\`\`\`
-/
-├── server/              # Código del servidor
-│   ├── index.js         # Punto de entrada del servidor
-│   ├── utils/           # Utilidades
-│   │   └── db.js        # Funciones de acceso a la base de datos
-│   └── uploads/         # Carpeta para archivos subidos
-│
-├── client/              # Código del cliente
-│   ├── app/             # Componentes de la aplicación
-│   │   └── page.tsx     # Página principal
-│   ├── components/      # Componentes reutilizables
-│   └── public/          # Archivos estáticos
-\`\`\`
 
 ## Instalación
 
