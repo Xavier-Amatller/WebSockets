@@ -3,6 +3,72 @@
     {
       "username": "x",
       "password": "x"
+    },
+    {
+      "username": "asasa12",
+      "password": "asasas"
+    }
+  ],
+  "messages": [
+    {
+      "username": "x",
+      "message": "a",
+      "room": "sala2",
+      "timestamp": "2025-05-08T13:57:25.002Z"
+    },
+    {
+      "username": "x",
+      "message": "a",
+      "room": "sala1",
+      "timestamp": "2025-05-08T13:58:38.767Z"
+    },
+    {
+      "username": "x",
+      "message": "aaa",
+      "room": "a",
+      "timestamp": "2025-05-08T13:59:03.328Z"
+    },
+    {
+      "username": "x",
+      "message": "s",
+      "room": "a",
+      "timestamp": "2025-05-08T13:59:06.448Z"
+    },
+    {
+      "username": "x",
+      "message": "kn",
+      "room": "jun",
+      "timestamp": "2025-05-08T14:00:34.167Z"
+    },
+    {
+      "username": "x",
+      "message": "s",
+      "room": "sala1",
+      "timestamp": "2025-05-08T14:00:42.357Z"
+    },
+    {
+      "username": "x",
+      "message": "a",
+      "room": "sala1",
+      "timestamp": "2025-05-08T14:00:45.247Z"
+    },
+    {
+      "username": "x",
+      "message": "asd",
+      "room": "d",
+      "timestamp": "2025-05-08T14:01:18.590Z"
+    },
+    {
+      "username": "x",
+      "message": "a",
+      "room": "d",
+      "timestamp": "2025-05-08T14:01:56.296Z"
+    },
+    {
+      "username": "asasa12",
+      "message": "asas",
+      "room": "General",
+      "timestamp": "2025-05-13T17:18:34.340Z"
     }
   ],
   "documents": [
@@ -12,48 +78,6 @@
       "title": "Documento sala1",
       "content": "khbkjn",
       "lastModified": "2025-05-08T14:08:57.296Z"
-    },
-    {
-      "id": "d2",
-      "room": "j",
-      "title": "Documento j",
-      "content": "udsfdsfasdas",
-      "lastModified": "2025-05-08T14:10:43.121Z"
-    },
-    {
-      "id": "d3",
-      "room": "General",
-      "title": "Documento General",
-      "content": "holaaaaaaaaa33asasa\nasasasaasaasasasasasasasasa",
-      "lastModified": "2025-05-13T17:00:07.454Z"
-    },
-    {
-      "id": "48dd8f2f-87e3-4797-8913-676a7b68bd51",
-      "room": "General",
-      "title": "AT01.pdf",
-      "path": "uploads\\ec43afe0b26bf92d91e69429b654637a",
-      "lastModified": "2025-05-12T16:53:00.633Z"
-    },
-    {
-      "id": "f8947c7b-d1fe-44c4-9531-75c7bbbf8934",
-      "room": "General",
-      "title": "mayo 2025-nÃ³mina.pdf",
-      "path": "uploads\\1e11f930bd45e5039cb2a7916877ec23",
-      "lastModified": "2025-05-12T16:57:17.961Z"
-    },
-    {
-      "id": "a7813e44-ee16-43ea-bbd1-32fcd7e0f0b3",
-      "room": "General",
-      "title": "valores-de-una-empresa.jpg",
-      "path": "uploads\\c71e03991f0fd5a25899dc65ded920f9",
-      "lastModified": "2025-05-13T16:55:37.370Z"
-    },
-    {
-      "id": "f36bb66b-23d3-494e-aabe-46b8f5dcc904",
-      "room": "General",
-      "title": "images.jpg",
-      "path": "uploads\\957fe4c7d08b6939d55dfa173f8d73ab",
-      "lastModified": "2025-05-13T17:05:31.141Z"
     }
   ],
   "documentVersions": [
@@ -64,95 +88,6 @@
       "createdBy": "x",
       "createdAt": "2025-05-12T15:00:00.000Z",
       "versionNumber": 1
-    },
-    {
-      "id": "v2",
-      "documentId": "d3",
-      "content": "holaasasassaasasasasasasasasas manuel tiziandoasasasAAAAAA",
-      "createdBy": "x",
-      "createdAt": "2025-05-12T16:23:55.910Z",
-      "versionNumber": 2
-    },
-    {
-      "id": "9c7efff7-39b6-4a8a-ac2b-9e7bc6987d71",
-      "documentId": "d3",
-      "content": "sddadsada",
-      "createdBy": "hola12345",
-      "createdAt": "2025-05-12T16:54:02.991Z",
-      "versionNumber": 3,
-      "isAutoSave": true
-    },
-    {
-      "id": "bd86a1db-f086-491b-8e5f-d45a3aa6067a",
-      "documentId": "d3",
-      "content": "holaasasassaasasasasasasasasas manuel tiziandoasasasAAAAAA",
-      "createdBy": "hola12345",
-      "createdAt": "2025-05-12T16:54:17.527Z",
-      "versionNumber": 4,
-      "isAutoSave": true
-    },
-    {
-      "id": "c2fb9aba-01d3-47e8-bf8d-fa7a655c741d",
-      "documentId": "d3",
-      "content": "holaasasassaasasasasasasasasas manuel tiziandoasasasAAAAAA",
-      "createdBy": "hola12345",
-      "createdAt": "2025-05-12T16:54:19.374Z",
-      "versionNumber": 5,
-      "isAutoSave": true
-    },
-    {
-      "id": "a223b13b-9584-410a-aa45-77e9945a019b",
-      "documentId": "d3",
-      "content": "Versión inicial del documento generalasasasasa\n\nLinia1\nLinia0\nLinia2\nLinia3",
-      "createdBy": "hola",
-      "createdAt": "2025-05-12T16:59:16.686Z",
-      "versionNumber": 6,
-      "isAutoSave": true
-    },
-    {
-      "id": "9e1df1d6-22e0-470a-93ef-ae136144ff66",
-      "documentId": "d3",
-      "content": "jjjjj",
-      "createdBy": "mnzb",
-      "createdAt": "2025-05-12T17:13:58.582Z",
-      "versionNumber": 7,
-      "isAutoSave": true
-    },
-    {
-      "id": "f3665690-7659-42a1-b8b0-103d6980d73f",
-      "documentId": "d3",
-      "content": "holaaaaaaaaa33asasa\nasasasaasaasasasasasasasasa",
-      "createdBy": "julian12345",
-      "createdAt": "2025-05-13T16:48:15.821Z",
-      "versionNumber": 8,
-      "isAutoSave": true
-    },
-    {
-      "id": "0745365d-fbcc-4259-b2ff-9a3f66a6b8ec",
-      "documentId": "d3",
-      "content": "adadasdsadasdsa",
-      "createdBy": "jaun",
-      "createdAt": "2025-05-13T16:57:31.037Z",
-      "versionNumber": 9,
-      "isAutoSave": true
-    },
-    {
-      "id": "9e4c661e-03f0-42ff-9b71-87da99e344fd",
-      "documentId": "d3",
-      "content": "holaaaaaaaaa33asasa\nasasasaasaasasasasasasasasa",
-      "createdBy": "jaun",
-      "createdAt": "2025-05-13T16:57:33.757Z",
-      "versionNumber": 10,
-      "isAutoSave": true
-    },
-    {
-      "id": "f72ef15f-6fce-4392-a467-abf6985f9518",
-      "documentId": "d3",
-      "content": "holaasasassaasasasasasasasasas manuel tiziandoasasasAAAAAA",
-      "createdBy": "jaun",
-      "createdAt": "2025-05-13T17:00:07.421Z",
-      "versionNumber": 11,
-      "isAutoSave": true
     }
   ]
 }
