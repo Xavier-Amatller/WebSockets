@@ -1,10 +1,12 @@
+// Directiva para indicar que es un componente de cliente (Next.js)
 "use client"
 
+// Importaciones necesarias
 import type React from "react"
-import { useEffect, useState, useRef } from "react"
-import axios from "axios"
+import { useEffect, useState, useRef } from "react" // Hooks de React
+import axios from "axios" // Cliente HTTP para peticiones al servidor
 
-// Definir tipos para los mensajes y documentos
+// Definición de interfaces TypeScript para tipado estricto
 interface Message {
   username: string
   message: string
@@ -28,74 +30,97 @@ interface DocumentVersion {
   createdAt: string
 }
 
+// Componente principal
 const ChatAppComponent: React.FC = () => {
+  // Estado para la conexión WebSocket
   const [socket, setSocket] = useState<WebSocket | null>(null)
-  const socketRef = useRef<WebSocket | null>(null)
-  const [messages, setMessages] = useState<Message[]>([])
-  const [documents, setDocuments] = useState<Document[]>([])
-  const [docContent, setDocContent] = useState("")
-  const [input, setInput] = useState("")
+  const socketRef = useRef<WebSocket | null>(null) // Referencia persistente al socket
+
+  // Estados para datos de la aplicación
+  const [messages, setMessages] = useState<Message[]>([]) // Mensajes del chat
+  const [documents, setDocuments] = useState<Document[]>([]) // Documentos compartidos
+  const [docContent, setDocContent] = useState("") // Contenido del documento actual
+  const [input, setInput] = useState("") // Input del mensaje a enviar
+
+  // Estados para autenticación
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [room, setRoom] = useState("General")
-  const [tempRoom, setTempRoom] = useState("General")
-  const [error, setError] = useState<string | null>(null)
-  const [showRegister, setShowRegister] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [showRoomModal, setShowRoomModal] = useState(false)
-  const [newRoomName, setNewRoomName] = useState("")
-  const [isUploading, setIsUploading] = useState(false)
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
-  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null)
-  const [documentVersions, setDocumentVersions] = useState<DocumentVersion[]>([])
-  const [showVersionHistory, setShowVersionHistory] = useState(false)
-  const [selectedVersion, setSelectedVersion] = useState<DocumentVersion | null>(null)
-  const [isVersionRestoring, setIsVersionRestoring] = useState(false)
-  const [lastSavedContent, setLastSavedContent] = useState("")
-  const [saveTimeout, setSaveTimeout] = useState<number | null>(null)
-  const [editingUser, setEditingUser] = useState<string | null>(null)
 
+  // Estados para gestión de salas
+  const [room, setRoom] = useState("General") // Sala actual
+  const [tempRoom, setTempRoom] = useState("General") // Sala temporal (para cambio)
+  const [newRoomName, setNewRoomName] = useState("") // Nombre para nueva sala
+
+  // Estados para UI y experiencia de usuario
+  const [error, setError] = useState<string | null>(null) // Mensajes de error
+  const [showRegister, setShowRegister] = useState(false) // Alternar entre login/registro
+  const messagesEndRef = useRef<HTMLDivElement>(null) // Referencia para auto-scroll
+  const [isLoading, setIsLoading] = useState(false) // Estado de carga
+  const [showRoomModal, setShowRoomModal] = useState(false) // Modal para cambiar sala
+  const [isUploading, setIsUploading] = useState(false) // Estado de subida de archivos
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false) // Selector de emojis
+
+  // Estados para gestión de documentos
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null) // Documento seleccionado
+  const [documentVersions, setDocumentVersions] = useState<DocumentVersion[]>([]) // Versiones del documento
+  const [showVersionHistory, setShowVersionHistory] = useState(false) // Modal de historial
+  const [selectedVersion, setSelectedVersion] = useState<DocumentVersion | null>(null) // Versión seleccionada
+  const [isVersionRestoring, setIsVersionRestoring] = useState(false) // Estado de restauración
+  const [lastSavedContent, setLastSavedContent] = useState("") // Último contenido guardado
+  const [saveTimeout, setSaveTimeout] = useState<number | null>(null) // Timeout para autoguardado
+  const [editingUser, setEditingUser] = useState<string | null>(null) // Usuario editando actualmente
+
+  // Efecto para establecer la conexión WebSocket cuando el usuario inicia sesión
   useEffect(() => {
     if (isLoggedIn && !socketRef.current) {
+      // Crea una nueva conexión WebSocket
       const ws = new WebSocket("ws://localhost:4000")
       socketRef.current = ws
       setSocket(ws)
 
+      // Cuando se abre la conexión, envía un mensaje para unirse a la sala
       ws.onopen = () => {
         ws.send(JSON.stringify({ type: "join", room, username }))
       }
 
+      // Manejo de mensajes recibidos
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data)
           if (data.type === "doc_update") {
+            // Actualización de documento
             setDocContent(data.content || "")
             setEditingUser(data.editedBy || null)
           } else if (data.type === "doc_typing") {
+            // Notificación de que alguien está escribiendo
             setEditingUser(data.username || null)
           } else {
+            // Mensaje de chat normal
             setMessages((prev) => [...prev, data])
           }
         } catch (err) {
-          // Silent error
+          // Error silencioso al parsear JSON
         }
       }
 
+      // Manejo de errores de conexión
       ws.onerror = () => {
         setError("No se pudo conectar al servidor")
       }
 
+      // Manejo de cierre de conexión
       ws.onclose = () => {
         socketRef.current = null
         setSocket(null)
       }
     }
-  }, [isLoggedIn, room, username])
+  }, [isLoggedIn, room, username]) // Se ejecuta cuando cambian estas dependencias
 
+  // Efecto para cargar historial de mensajes y documentos al iniciar sesión o cambiar de sala
   useEffect(() => {
     if (isLoggedIn) {
+      // Carga el historial de mensajes
       axios
         .get(`http://localhost:4000/api/history/${room}`)
         .then((response) => {
@@ -105,10 +130,12 @@ const ChatAppComponent: React.FC = () => {
           setError("Error al cargar el historial")
         })
 
+      // Carga los documentos de la sala
       axios
         .get(`http://localhost:4000/api/documents/${room}`)
         .then((response) => {
           setDocuments(response.data)
+          // Busca un documento con contenido para mostrarlo
           const doc = response.data.find((d: Document) => d.content)
           if (doc) {
             setDocContent(doc.content || "")
@@ -121,26 +148,29 @@ const ChatAppComponent: React.FC = () => {
     }
   }, [isLoggedIn, room])
 
+  // Efecto para hacer scroll automático al final de los mensajes
   useEffect(() => {
-    // Scroll to bottom of messages
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
-  // Auto-save document changes with debounce
+  // Efecto para autoguardado de documentos con debounce
   useEffect(() => {
     if (docContent !== lastSavedContent && isLoggedIn) {
+      // Limpia el timeout anterior si existe
       if (saveTimeout) {
         window.clearTimeout(saveTimeout)
       }
 
+      // Establece un nuevo timeout para guardar después de 2 segundos de inactividad
       const timeout = window.setTimeout(() => {
-        updateDoc(docContent, true)
+        updateDoc(docContent, true) // Guarda el documento
         setLastSavedContent(docContent)
-      }, 2000) // 2 seconds debounce
+      }, 2000) // 2 segundos de debounce
 
       setSaveTimeout(timeout)
     }
 
+    // Limpieza al desmontar el componente
     return () => {
       if (saveTimeout) {
         window.clearTimeout(saveTimeout)
@@ -148,6 +178,7 @@ const ChatAppComponent: React.FC = () => {
     }
   }, [docContent, lastSavedContent, isLoggedIn])
 
+  // Función para manejar el inicio de sesión
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError(null)
@@ -166,6 +197,7 @@ const ChatAppComponent: React.FC = () => {
     }
   }
 
+  // Función para manejar el registro de usuario
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError(null)
@@ -185,6 +217,7 @@ const ChatAppComponent: React.FC = () => {
     }
   }
 
+  // Función para enviar mensajes
   const sendMessage = () => {
     if (!input || !socket || socket.readyState !== WebSocket.OPEN) {
       setError("No se puede enviar el mensaje: conexión no establecida o mensaje vacío")
@@ -192,12 +225,13 @@ const ChatAppComponent: React.FC = () => {
     }
     try {
       socket.send(JSON.stringify({ type: "message", room, username, message: input }))
-      setInput("")
+      setInput("") // Limpia el input después de enviar
     } catch (err) {
       setError("Error al enviar el mensaje")
     }
   }
 
+  // Función para subir archivos
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -211,6 +245,7 @@ const ChatAppComponent: React.FC = () => {
       await axios.post("http://localhost:4000/api/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       })
+      // Recarga la lista de documentos después de subir
       const response = await axios.get(`http://localhost:4000/api/documents/${room}`)
       setDocuments(response.data)
     } catch (error: any) {
@@ -220,6 +255,7 @@ const ChatAppComponent: React.FC = () => {
     }
   }
 
+  // Función para actualizar el documento colaborativo
   const updateDoc = (content: string, createVersion = false) => {
     if (!socket || socket.readyState !== WebSocket.OPEN) {
       setError("No se puede actualizar el documento: conexión no establecida")
@@ -232,7 +268,7 @@ const ChatAppComponent: React.FC = () => {
           room,
           content,
           username,
-          createVersion,
+          createVersion, // Indica si se debe crear una nueva versión
         }),
       )
       setDocContent(content)
@@ -241,6 +277,7 @@ const ChatAppComponent: React.FC = () => {
     }
   }
 
+  // Función para cerrar sesión
   const handleLogout = () => {
     setIsLoggedIn(false)
     setUsername("")
@@ -250,11 +287,13 @@ const ChatAppComponent: React.FC = () => {
     setDocContent("")
     setRoom("General")
     setTempRoom("General")
+    // Cierra la conexión WebSocket
     if (socketRef.current) {
       socketRef.current.close()
     }
   }
 
+  // Función para cambiar de sala
   const handleChangeRoom = () => {
     if (tempRoom && tempRoom !== room) {
       setRoom(tempRoom)
@@ -262,6 +301,7 @@ const ChatAppComponent: React.FC = () => {
     }
   }
 
+  // Función para crear una nueva sala
   const handleCreateRoom = () => {
     if (newRoomName.trim()) {
       setRoom(newRoomName.trim())
@@ -271,6 +311,7 @@ const ChatAppComponent: React.FC = () => {
     }
   }
 
+  // Función para manejar teclas en el input (enviar con Enter)
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
@@ -278,11 +319,13 @@ const ChatAppComponent: React.FC = () => {
     }
   }
 
+  // Función para formatear timestamps en formato hora:minutos
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp)
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
   }
 
+  // Función para formatear fechas completas
   const formatDate = (timestamp: string) => {
     const date = new Date(timestamp)
     return date.toLocaleString([], {
@@ -294,11 +337,13 @@ const ChatAppComponent: React.FC = () => {
     })
   }
 
+  // Función para añadir emojis al mensaje
   const addEmoji = (emoji: string) => {
     setInput((prev) => prev + emoji)
     setShowEmojiPicker(false)
   }
 
+  // Función para cargar versiones de un documento
   const loadDocumentVersions = async (documentId: string) => {
     try {
       const response = await axios.get(`http://localhost:4000/api/version/${documentId}`)
@@ -309,6 +354,7 @@ const ChatAppComponent: React.FC = () => {
     }
   }
 
+  // Función para restaurar una versión anterior
   const restoreVersion = async (version: DocumentVersion) => {
     setIsVersionRestoring(true)
     try {
@@ -317,11 +363,13 @@ const ChatAppComponent: React.FC = () => {
         username,
       })
 
+      // Actualiza la UI con el contenido restaurado
       setDocContent(version.content)
       setLastSavedContent(version.content)
       setShowVersionHistory(false)
       setSelectedVersion(null)
 
+      // Notifica a otros usuarios sobre la restauración
       if (socket && socket.readyState === WebSocket.OPEN) {
         socket.send(
           JSON.stringify({
@@ -339,17 +387,21 @@ const ChatAppComponent: React.FC = () => {
     }
   }
 
+  // Lista de emojis disponibles
   const emojis = ["😊", "👍", "❤️", "🎉", "🔥", "😂", "🤔", "👏", "🙏", "✅"]
 
+  // Renderizado condicional: pantalla de login/registro si no está autenticado
   if (!isLoggedIn) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="w-full max-w-md">
+          {/* Cabecera de la aplicación */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900">Chat Colaborativo</h1>
             <p className="text-gray-600 mt-2">Conecta, colabora y comparte en tiempo real</p>
           </div>
 
+          {/* Tarjeta de login/registro */}
           <div className="bg-white rounded-xl shadow-xl overflow-hidden">
             <div className="p-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
@@ -361,6 +413,7 @@ const ChatAppComponent: React.FC = () => {
                   : "Inicia sesión para continuar con tu trabajo"}
               </p>
 
+              {/* Mensaje de error */}
               {error && (
                 <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-md">
                   <div className="flex">
@@ -385,8 +438,10 @@ const ChatAppComponent: React.FC = () => {
                 </div>
               )}
 
+              {/* Formulario de registro */}
               {showRegister ? (
                 <form onSubmit={handleRegister} className="space-y-5">
+                  {/* Campo de usuario */}
                   <div className="space-y-2">
                     <label htmlFor="username" className="block text-sm font-medium text-gray-700">
                       Nombre de usuario
@@ -417,6 +472,7 @@ const ChatAppComponent: React.FC = () => {
                       />
                     </div>
                   </div>
+                  {/* Campo de contraseña */}
                   <div className="space-y-2">
                     <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                       Contraseña
@@ -447,6 +503,7 @@ const ChatAppComponent: React.FC = () => {
                       />
                     </div>
                   </div>
+                  {/* Botón de registro con estado de carga */}
                   <div className="pt-2">
                     <button
                       type="submit"
@@ -481,7 +538,9 @@ const ChatAppComponent: React.FC = () => {
                   </div>
                 </form>
               ) : (
+                // Formulario de login
                 <form onSubmit={handleLogin} className="space-y-5">
+                  {/* Campo de usuario */}
                   <div className="space-y-2">
                     <label htmlFor="username" className="block text-sm font-medium text-gray-700">
                       Nombre de usuario
@@ -512,6 +571,7 @@ const ChatAppComponent: React.FC = () => {
                       />
                     </div>
                   </div>
+                  {/* Campo de contraseña con enlace de recuperación */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label htmlFor="password" className="block text-sm font-medium text-gray-700">
@@ -547,6 +607,7 @@ const ChatAppComponent: React.FC = () => {
                       />
                     </div>
                   </div>
+                  {/* Botón de login con estado de carga */}
                   <div className="pt-2">
                     <button
                       type="submit"
@@ -583,6 +644,7 @@ const ChatAppComponent: React.FC = () => {
               )}
             </div>
 
+            {/* Pie de la tarjeta con alternancia entre login/registro */}
             <div className="px-8 py-6 bg-gray-50 border-t border-gray-200">
               <p className="text-center text-sm text-gray-600">
                 {showRegister ? "¿Ya tienes una cuenta?" : "¿No tienes una cuenta?"}
@@ -597,6 +659,7 @@ const ChatAppComponent: React.FC = () => {
             </div>
           </div>
 
+          {/* Pie de página */}
           <div className="mt-8 text-center">
             <p className="text-xs text-gray-500">
               &copy; {new Date().getFullYear()} Chat Colaborativo. Todos los derechos reservados.
@@ -607,11 +670,13 @@ const ChatAppComponent: React.FC = () => {
     )
   }
 
+  // Interfaz principal cuando el usuario está autenticado
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* Cabecera */}
       <header className="bg-white border-b border-gray-200 py-3 px-6 shadow-sm">
         <div className="flex items-center justify-between">
+          {/* Logo y nombre de la sala */}
           <div className="flex items-center space-x-4">
             <div className="flex items-center">
               <svg
@@ -634,7 +699,9 @@ const ChatAppComponent: React.FC = () => {
             </div>
           </div>
 
+          {/* Botones de acción */}
           <div className="flex items-center space-x-3">
+            {/* Botón para cambiar de sala */}
             <button
               onClick={() => setShowRoomModal(true)}
               className="inline-flex items-center px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-colors"
@@ -657,12 +724,14 @@ const ChatAppComponent: React.FC = () => {
               Cambiar sala
             </button>
 
+            {/* Avatar del usuario */}
             <div className="relative">
               <button className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-teal-100 text-teal-800 hover:bg-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-500">
                 <span className="font-medium text-sm">{username.substring(0, 2).toUpperCase()}</span>
               </button>
             </div>
 
+            {/* Botón de cierre de sesión */}
             <button
               onClick={handleLogout}
               className="inline-flex items-center px-3 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
@@ -687,7 +756,7 @@ const ChatAppComponent: React.FC = () => {
         </div>
       </header>
 
-      {/* Error message */}
+      {/* Mensaje de error */}
       {error && (
         <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-md flex items-start">
           <svg
@@ -715,12 +784,13 @@ const ChatAppComponent: React.FC = () => {
         </div>
       )}
 
-      {/* Main content - Unified Interface */}
+      {/* Contenido principal - Interfaz unificada */}
       <div className="flex-1 p-6 overflow-y-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Left Column - Chat */}
+          {/* Columna izquierda - Chat */}
           <div className="flex flex-col h-full">
             <div className="bg-white rounded-xl shadow-md border border-gray-200">
+              {/* Cabecera del chat */}
               <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
                 <h3 className="text-lg font-medium text-gray-900 flex items-center">
                   <svg
@@ -742,7 +812,7 @@ const ChatAppComponent: React.FC = () => {
                 </span>
               </div>
 
-              {/* Chat messages */}
+              {/* Mensajes del chat */}
               <div className="p-6 h-[500px] overflow-y-auto bg-gray-50">
                 <div className="space-y-4">
                   {messages.length > 0 ? (
@@ -751,12 +821,14 @@ const ChatAppComponent: React.FC = () => {
                         key={i}
                         className={`flex items-start space-x-2 ${msg.username === username ? "justify-end" : ""}`}
                       >
+                        {/* Avatar para mensajes de otros usuarios */}
                         {msg.username !== username && (
                           <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-medium">
                             {msg.username.substring(0, 2).toUpperCase()}
                           </div>
                         )}
                         <div className={`max-w-[80%] ${msg.username === username ? "order-first mr-2" : ""}`}>
+                          {/* Burbuja de mensaje */}
                           <div
                             className={`px-4 py-3 rounded-2xl ${
                               msg.username === username
@@ -764,13 +836,16 @@ const ChatAppComponent: React.FC = () => {
                                 : "bg-white border border-gray-200 shadow-sm rounded-tl-none"
                             }`}
                           >
+                            {/* Nombre de usuario para mensajes de otros */}
                             {msg.username !== username && (
                               <p className="text-xs font-medium mb-1 text-gray-600">{msg.username}</p>
                             )}
                             <p className="text-sm">{msg.message}</p>
                           </div>
+                          {/* Timestamp del mensaje */}
                           <p className="text-xs text-gray-500 mt-1 ml-2">{formatTimestamp(msg.timestamp)}</p>
                         </div>
+                        {/* Avatar para mensajes propios */}
                         {msg.username === username && (
                           <div className="h-10 w-10 rounded-full bg-teal-500 flex items-center justify-center text-white text-sm font-medium">
                             {msg.username.substring(0, 2).toUpperCase()}
@@ -779,6 +854,7 @@ const ChatAppComponent: React.FC = () => {
                       </div>
                     ))
                   ) : (
+                    // Estado vacío cuando no hay mensajes
                     <div className="flex flex-col items-center justify-center h-full text-center py-10">
                       <div className="bg-gray-100 p-4 rounded-full mb-4">
                         <svg
@@ -798,11 +874,12 @@ const ChatAppComponent: React.FC = () => {
                       <p className="text-gray-500 max-w-sm">Sé el primero en enviar un mensaje en esta sala de chat.</p>
                     </div>
                   )}
+                  {/* Referencia para auto-scroll */}
                   <div ref={messagesEndRef} />
                 </div>
               </div>
 
-              {/* Message input */}
+              {/* Input para enviar mensajes */}
               <div className="p-4 border-t border-gray-200 bg-white">
                 <div className="flex w-full space-x-2">
                   <div className="relative flex-1">
@@ -813,6 +890,7 @@ const ChatAppComponent: React.FC = () => {
                       placeholder="Escribe un mensaje..."
                       className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                     />
+                    {/* Botón de emojis */}
                     <button
                       onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
@@ -831,6 +909,7 @@ const ChatAppComponent: React.FC = () => {
                       </svg>
                     </button>
 
+                    {/* Selector de emojis */}
                     {showEmojiPicker && (
                       <div className="absolute right-0 bottom-12 bg-white rounded-lg shadow-lg border border-gray-200 p-2 z-10">
                         <div className="flex flex-wrap gap-2 max-w-[200px]">
@@ -847,6 +926,7 @@ const ChatAppComponent: React.FC = () => {
                       </div>
                     )}
                   </div>
+                  {/* Botón de enviar */}
                   <button
                     onClick={sendMessage}
                     className="inline-flex items-center justify-center px-4 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-colors"
@@ -869,7 +949,7 @@ const ChatAppComponent: React.FC = () => {
               </div>
             </div>
 
-            {/* Export button */}
+            {/* Botón para exportar historial */}
             <div className="flex justify-end mt-4">
               <button
                 onClick={() => window.open(`http://localhost:4000/api/export/${room}?format=txt`)}
@@ -894,9 +974,10 @@ const ChatAppComponent: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Column - Document */}
+          {/* Columna derecha - Documento colaborativo */}
           <div className="flex flex-col h-full">
             <div className="bg-white rounded-xl shadow-md border border-gray-200">
+              {/* Cabecera del documento */}
               <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
                 <h3 className="text-lg font-medium text-gray-900 flex items-center">
                   <svg
@@ -917,6 +998,7 @@ const ChatAppComponent: React.FC = () => {
                   </svg>
                   Documento colaborativo
                 </h3>
+                {/* Botón para ver historial de versiones */}
                 <button
                   onClick={() => {
                     const doc = documents.find((d) => d.room === room && d.content)
@@ -945,6 +1027,7 @@ const ChatAppComponent: React.FC = () => {
                 </button>
               </div>
               <div className="p-6">
+                {/* Información del documento */}
                 <div className="mb-4 flex items-center justify-between">
                   <div className="flex items-center">
                     <div className="h-8 w-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 mr-2">
@@ -971,7 +1054,9 @@ const ChatAppComponent: React.FC = () => {
                     </span>
                   </div>
                 </div>
+                {/* Editor de documento */}
                 <div className="border border-gray-300 rounded-lg overflow-hidden">
+                  {/* Barra de herramientas */}
                   <div className="bg-gray-50 px-4 py-2 border-b border-gray-300 flex items-center space-x-2">
                     <button
                       onClick={() => updateDoc(docContent, true)}
@@ -987,6 +1072,7 @@ const ChatAppComponent: React.FC = () => {
                         <path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2-2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293zM9 4a1 1 0 012 0v2H9V4z" />
                       </svg>
                     </button>
+                    {/* Otros botones de herramientas */}
                     <button className="p-1 text-gray-500 hover:text-gray-700 rounded hover:bg-gray-200">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -1026,10 +1112,12 @@ const ChatAppComponent: React.FC = () => {
                       </svg>
                     </button>
                   </div>
+                  {/* Área de texto para edición colaborativa */}
                   <textarea
                     value={docContent}
                     onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
                       setDocContent(e.target.value)
+                      // Notifica a otros usuarios que estás escribiendo
                       if (socket && socket.readyState === WebSocket.OPEN) {
                         socket.send(
                           JSON.stringify({
@@ -1047,7 +1135,7 @@ const ChatAppComponent: React.FC = () => {
               </div>
             </div>
 
-            {/* Upload button */}
+            {/* Botón para subir archivos */}
             <div className="flex justify-between mt-4">
               <div className="relative">
                 <input
@@ -1083,6 +1171,7 @@ const ChatAppComponent: React.FC = () => {
           </div>
         </div>
 
+        {/* Sección de archivos compartidos */}
         <div className="mt-6 bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
             <h3 className="text-lg font-medium text-gray-900 flex items-center">
@@ -1110,6 +1199,7 @@ const ChatAppComponent: React.FC = () => {
           </div>
           <div className="p-6">
             {documents.length > 0 ? (
+              // Lista de documentos
               <div className="overflow-hidden bg-white rounded-lg border border-gray-200">
                 <ul className="divide-y divide-gray-200">
                   {documents.map((doc) => (
@@ -1187,6 +1277,7 @@ const ChatAppComponent: React.FC = () => {
                 </ul>
               </div>
             ) : (
+              // Estado vacío cuando no hay documentos
               <div className="flex flex-col items-center justify-center text-center py-10 bg-gray-50 rounded-lg border border-gray-200 border-dashed">
                 <div className="bg-gray-100 p-4 rounded-full mb-4">
                   <svg
@@ -1244,7 +1335,7 @@ const ChatAppComponent: React.FC = () => {
         </div>
       </div>
 
-      {/* Room change modal */}
+      {/* Modal para cambiar de sala */}
       {showRoomModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
@@ -1310,7 +1401,7 @@ const ChatAppComponent: React.FC = () => {
         </div>
       )}
 
-      {/* Document detail modal */}
+      {/* Modal de detalles del documento */}
       {selectedDocument && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6">
@@ -1393,7 +1484,7 @@ const ChatAppComponent: React.FC = () => {
         </div>
       )}
 
-      {/* Version history modal */}
+      {/* Modal de historial de versiones */}
       {showVersionHistory && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full p-6">
