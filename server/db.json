@@ -7,6 +7,30 @@
     {
       "username": "asasa12",
       "password": "asasas"
+    },
+    {
+      "username": "cristian",
+      "password": "12345"
+    },
+    {
+      "username": "manuel123456",
+      "password": "12345"
+    },
+    {
+      "username": "usuario12345",
+      "password": "12345"
+    },
+    {
+      "username": "hola12345",
+      "password": "12345"
+    },
+    {
+      "username": "hola1224",
+      "password": "123"
+    },
+    {
+      "username": "12345",
+      "password": "12345"
     }
   ],
   "messages": [
@@ -69,6 +93,48 @@
       "message": "asas",
       "room": "General",
       "timestamp": "2025-05-13T17:18:34.340Z"
+    },
+    {
+      "username": "cristian",
+      "message": "hola+++",
+      "room": "General",
+      "timestamp": "2025-05-15T15:57:15.662Z"
+    },
+    {
+      "username": "cristian",
+      "message": "asasa",
+      "room": "General",
+      "timestamp": "2025-05-15T15:57:53.937Z"
+    },
+    {
+      "username": "usuario12345",
+      "message": "hola",
+      "room": "General",
+      "timestamp": "2025-05-15T15:58:45.676Z"
+    },
+    {
+      "username": "cristian",
+      "message": "hola",
+      "room": "General",
+      "timestamp": "2025-05-15T15:59:05.227Z"
+    },
+    {
+      "username": "usuario12345",
+      "message": "hola22",
+      "room": "General",
+      "timestamp": "2025-05-15T15:59:18.855Z"
+    },
+    {
+      "username": "12345",
+      "message": "asas",
+      "room": "General",
+      "timestamp": "2025-05-15T17:27:49.639Z"
+    },
+    {
+      "username": "12345",
+      "message": "as",
+      "room": "General",
+      "timestamp": "2025-05-15T17:27:50.049Z"
     }
   ],
   "documents": [
@@ -78,6 +144,20 @@
       "title": "Documento sala1",
       "content": "khbkjn",
       "lastModified": "2025-05-08T14:08:57.296Z"
+    },
+    {
+      "id": "19d0e203-157e-460e-b678-4fad9be75666",
+      "room": "General",
+      "title": "Documento General",
+      "content": "12\nhola12345678910",
+      "lastModified": "2025-05-15T17:27:45.942Z"
+    },
+    {
+      "id": "d42571a7-eb19-4176-ab7f-96a8cf7cb047",
+      "room": "General",
+      "title": "guia_memoria_DUAL.pdf",
+      "path": "uploads\\b000321db0590a6d78d258aee5f2b218",
+      "lastModified": "2025-05-15T16:01:40.974Z"
     }
   ],
   "documentVersions": [
@@ -88,6 +168,90 @@
       "createdBy": "x",
       "createdAt": "2025-05-12T15:00:00.000Z",
       "versionNumber": 1
+    },
+    {
+      "id": "v2",
+      "documentId": "d1",
+      "content": "Contenido inicial de sala1",
+      "createdBy": "x",
+      "createdAt": "2025-05-08T14:00:00.000Z",
+      "versionNumber": 1
+    },
+    {
+      "id": "v3",
+      "documentId": "d1",
+      "content": "Contenido modificado de sala1",
+      "createdBy": "cristian",
+      "createdAt": "2025-05-08T14:05:00.000Z",
+      "versionNumber": 2
+    },
+    {
+      "id": "v4",
+      "documentId": "d1",
+      "content": "khbkjn",
+      "createdBy": "usuario12345",
+      "createdAt": "2025-05-08T14:08:00.000Z",
+      "versionNumber": 3
+    },
+    {
+      "id": "v5",
+      "documentId": "19d0e203-157e-460e-b678-4fad9be75666",
+      "content": "Contenido inicial del documento general",
+      "createdBy": "asasa12",
+      "createdAt": "2025-05-15T15:50:00.000Z",
+      "versionNumber": 1
+    },
+    {
+      "id": "v6",
+      "documentId": "19d0e203-157e-460e-b678-4fad9be75666",
+      "content": "12\nhola123456789",
+      "createdBy": "cristian",
+      "createdAt": "2025-05-15T15:55:00.000Z",
+      "versionNumber": 2
+    },
+    {
+      "id": "v7",
+      "documentId": "19d0e203-157e-460e-b678-4fad9be75666",
+      "content": "12\nhola12345678910",
+      "createdBy": "usuario12345",
+      "createdAt": "2025-05-15T16:00:00.000Z",
+      "versionNumber": 3
+    },
+    {
+      "id": "b6ee8361-29de-4592-9fe6-8d9e3ab85239",
+      "documentId": "19d0e203-157e-460e-b678-4fad9be75666",
+      "content": "12\nsaasasasasasass",
+      "createdBy": "12345",
+      "createdAt": "2025-05-15T17:27:16.150Z",
+      "versionNumber": 4,
+      "isAutoSave": true
+    },
+    {
+      "id": "2142a483-c44b-49d0-9011-15dc1c154563",
+      "documentId": "19d0e203-157e-460e-b678-4fad9be75666",
+      "content": "12\nhola12345678910",
+      "createdBy": "12345",
+      "createdAt": "2025-05-15T17:27:18.773Z",
+      "versionNumber": 5,
+      "isAutoSave": true
+    },
+    {
+      "id": "ec169c8c-1a32-4355-9008-27db73afac36",
+      "documentId": "19d0e203-157e-460e-b678-4fad9be75666",
+      "content": "2",
+      "createdBy": "12345",
+      "createdAt": "2025-05-15T17:27:34.647Z",
+      "versionNumber": 6,
+      "isAutoSave": true
+    },
+    {
+      "id": "8216d7e7-4082-4339-b0e7-e2e81e11b783",
+      "documentId": "19d0e203-157e-460e-b678-4fad9be75666",
+      "content": "12\nsaasasasasasass",
+      "createdBy": "hola1224",
+      "createdAt": "2025-05-15T17:27:43.910Z",
+      "versionNumber": 7,
+      "isAutoSave": true
     }
   ]
 }
